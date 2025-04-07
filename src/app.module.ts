@@ -4,6 +4,13 @@ import { ConfigModule } from '@nestjs/config';
 import { UsersModule } from './modules/users/users.module';
 import { User } from './modules/users/model/user.model';
 import { AuthModule } from './modules/auth/auth.module';
+import { CompanyProfileModule } from './modules/companyProfiles/company-profile.module';
+import { JobModule } from './modules/jobs/job.module';
+import { MailModule } from './modules/mail/mail.module';
+import { CompanyProfile } from './modules/companyProfiles/model/companyProfile.model';
+import { Job } from './modules/jobs/model/job.model';
+import { ApplicationModule } from './modules/application/application.module';
+import { Application } from './modules/application/model/application.model';
 
 @Module({
   imports: [
@@ -17,11 +24,15 @@ import { AuthModule } from './modules/auth/auth.module';
       database: process.env.DB_NAME,
       autoLoadModels: true,
       synchronize: true,
-      models: [User],
+      models: [User, Job, CompanyProfile, Application],
     }),
-    SequelizeModule.forFeature([User]),
+    SequelizeModule.forFeature([User, Job, CompanyProfile, Application]),
     AuthModule,
     UsersModule,
+    CompanyProfileModule,
+    MailModule,
+    JobModule,
+    ApplicationModule,
   ],
 })
 export class AppModule {}

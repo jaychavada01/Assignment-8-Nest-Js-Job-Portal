@@ -4,11 +4,12 @@ import {
   Model,
   DataType,
   PrimaryKey,
-  AutoIncrement,
   Default,
   AllowNull,
   Unique,
+  ForeignKey,
 } from 'sequelize-typescript';
+import { CompanyProfile } from 'src/modules/companyProfiles/model/companyProfile.model';
 
 export enum UserRole {
   Admin = 'Admin',
@@ -17,15 +18,15 @@ export enum UserRole {
 }
 
 @Table({
-  tableName: 'users',
+  tableName: 'Users',
   timestamps: true,
   paranoid: true,
 })
 export class User extends Model<User, Partial<User>> {
   @PrimaryKey
-  @AutoIncrement
-  @Column
-  declare id: number;
+  @Default(DataType.UUIDV4)
+  @Column(DataType.UUID)
+  declare id: string;
 
   @AllowNull(false)
   @Column
@@ -58,8 +59,23 @@ export class User extends Model<User, Partial<User>> {
 
   @AllowNull(true)
   @Column(DataType.INTEGER)
-  updatedBy: number;
+  declare experience: number | null;
 
+  @AllowNull(true)
+  @Column(DataType.ARRAY(DataType.STRING))
+  declare skills: string[] | null;
+
+  @ForeignKey(() => CompanyProfile)
+  @AllowNull(true)
+  @Column(DataType.UUID)
+  declare companyId: string | null;
+
+  @ForeignKey(() => User)
+  @AllowNull(true)
+  @Column(DataType.UUID)
+  updatedBy: string;
+
+  @ForeignKey(() => User)
   @AllowNull(true)
   @Column(DataType.INTEGER)
   deletedBy: number;

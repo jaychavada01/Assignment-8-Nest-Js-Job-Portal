@@ -5,7 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
-import { User } from './model/user.model';
+import { User, UserRole } from './model/user.model';
 import { CreateUserDTO } from './dto/create-user-dto';
 import { LoginUserDTO } from './dto/login-user-dto';
 import * as bcrypt from 'bcryptjs';
@@ -34,11 +34,40 @@ export class UsersService {
 
     const hashedPassword = await bcrypt.hash(data.password, 10);
 
+    // Conditional companyId validation
+    let companyId: string | null = null;
+
+    if (data.role === UserRole.Employer) {
+      if (!data.companyId) {
+        throw new BadRequestException(
+          'Employer must be associated with a companyId',
+        );
+      }
+      companyId = data.companyId;
+    } else if (data.companyId) {
+      throw new BadRequestException(
+        'Only Employer can be associated with a companyId',
+      );
+    }
+
+    const parsedSkills =
+      data.role === UserRole.JobSeeker && typeof data.skills === 'string'
+        ? JSON.parse(data.skills)
+        : null;
+
+    const parsedExperience =
+      data.role === UserRole.JobSeeker && typeof data.experience === 'string'
+        ? parseInt(data.experience)
+        : data.experience;
+
     const user = await this.userModel.create({
       ...data,
       password: hashedPassword,
       profilePic,
-      resume: data.role === 'JobSeeker' ? resume : null,
+      resume: data.role === UserRole.JobSeeker ? resume : null,
+      experience: data.role === UserRole.JobSeeker ? parsedExperience : null,
+      skills: data.role === UserRole.JobSeeker ? parsedSkills : null,
+      companyId,
     });
 
     return user;
@@ -53,19 +82,13 @@ export class UsersService {
       attributes: ['id', 'name', 'email', 'password', 'role', 'accessToken'],
     });
 
-    if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
-    }
+    if (!user) throw new UnauthorizedException('Invalid credentials');
 
     const isMatch = await bcrypt.compare(data.password, user.password);
-    if (!isMatch) {
-      throw new UnauthorizedException('Invalid credentials');
-    }
+    if (!isMatch) throw new UnauthorizedException('Invalid credentials');
 
     const secret = this.configService.get<string>('JWT_SECRET');
-    if (!secret) {
-      throw new Error('JWT_SECRET is not defined in environment variables');
-    }
+    if (!secret) throw new Error('JWT_SECRET is not defined');
 
     const accessToken = jwt.sign(
       { id: user.id, email: user.email, role: user.role },
@@ -80,9 +103,8 @@ export class UsersService {
   }
 
   // ** LOGOUT USER
-  async logout(userId: number): Promise<{ message: string }> {
+  async logout(userId: string): Promise<{ message: string }> {
     const user = await this.userModel.findByPk(userId);
-
     if (!user) {
       throw new BadRequestException('User not found');
     }
@@ -92,7 +114,7 @@ export class UsersService {
     return { message: 'Logged out successfully' };
   }
 
-  //** Get all users (Admin only)
+  // ** Get all users (Admin only)
   async findAll() {
     return this.userModel.findAll({
       order: [['createdAt', 'ASC']],
@@ -102,22 +124,21 @@ export class UsersService {
   // ** Get all JobSeekers (Admin & Employer)
   async findAllJobSeekers() {
     return this.userModel.findAll({
-      where: { role: 'JobSeeker' },
+      where: { role: UserRole.JobSeeker },
     });
   }
 
   // ** Admin update user
   async updateUserByAdmin(
-    id: number,
+    id: string,
     data: UpdateUserDTO,
-    updatedById: number,
+    updatedById: string,
     profilePic?: string | null,
     resume?: string | null,
   ) {
     const user = await this.userModel.findByPk(id);
     if (!user) throw new NotFoundException('User not found');
 
-    // Use existing values if not provided in update
     const updatedData = {
       name: data.name ?? user.name,
       email: data.email ?? user.email,
@@ -132,14 +153,13 @@ export class UsersService {
   }
 
   // ** Soft delete user account
-  async deleteUserByAdmin(userId: number, deletedById: number) {
+  async deleteUserByAdmin(userId: string, deletedById: string) {
     const user = await this.userModel.findByPk(userId);
     if (!user) {
       throw new NotFoundException('User not found');
     }
 
-    // Soft delete: mark deletedBy or use Sequelize's `destroy()` for hard delete
-    await user.destroy(); // or `await user.update({ isDeleted: true, deletedBy: deletedById });`
+    await user.destroy(); // Soft delete or mark deletedBy if soft delete logic needed
 
     return { message: 'User deleted successfully', deletedById };
   }

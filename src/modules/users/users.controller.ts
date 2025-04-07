@@ -21,6 +21,7 @@ import { multerConfig } from 'src/config/multer.config';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
 import { UpdateUserDTO } from './dto/update-user-dto';
+import { UserRole } from './model/user.model';
 
 @Controller('users')
 export class UsersController {
@@ -50,7 +51,7 @@ export class UsersController {
     const profilePic = files?.profilePic?.[0]?.filename || null;
     const resume = files?.resume?.[0]?.filename || null;
 
-    if (createUserDto.role === 'JobSeeker') {
+    if (createUserDto.role === UserRole.JobSeeker) {
       return this.usersService.register(createUserDto, profilePic, resume);
     }
 
@@ -129,7 +130,7 @@ export class UsersController {
     const resume = files?.resume?.[0]?.filename || null;
 
     return this.usersService.updateUserByAdmin(
-      +id,
+      id,
       data,
       adminId,
       profilePic,
@@ -145,6 +146,6 @@ export class UsersController {
   @Roles('Admin')
   async deleteUserById(@Param('id') id: string, @Req() req) {
     const adminId = req.user.id;
-    return this.usersService.deleteUserByAdmin(+id, adminId);
+    return this.usersService.deleteUserByAdmin(id, adminId);
   }
 }

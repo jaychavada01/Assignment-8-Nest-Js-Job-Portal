@@ -24,7 +24,13 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  async validate(payload: { id: number }) {
+  async validate(payload: { id: string }) {
+    if (typeof payload.id !== 'string') {
+      throw new UnauthorizedException(
+        'Invalid token payload: ID must be a UUID string',
+      );
+    }
+
     const user = await this.userModel.findByPk(payload.id);
     if (!user || !user.accessToken) {
       throw new UnauthorizedException('Invalid or expired token');
