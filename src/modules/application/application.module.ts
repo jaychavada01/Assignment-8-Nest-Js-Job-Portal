@@ -6,9 +6,13 @@ import { User } from '../users/model/user.model';
 import { ApplicationService } from './application.service';
 import { ApplicationController } from './application.controller';
 import { MailModule } from '../mail/mail.module';
+import { InterviewInvitation } from '../interview/interview.model';
 
 @Module({
-  imports: [SequelizeModule.forFeature([Application, Job, User]), MailModule],
+  imports: [
+    SequelizeModule.forFeature([Application, Job, User, InterviewInvitation]),
+    MailModule,
+  ],
   providers: [ApplicationService],
   controllers: [ApplicationController],
 })

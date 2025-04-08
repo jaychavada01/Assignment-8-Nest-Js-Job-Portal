@@ -11,6 +11,7 @@ import { CompanyProfile } from './modules/companyProfiles/model/companyProfile.m
 import { Job } from './modules/jobs/model/job.model';
 import { ApplicationModule } from './modules/application/application.module';
 import { Application } from './modules/application/model/application.model';
+import { FeedbackModule } from './modules/feedback/feedback.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { Application } from './modules/application/model/application.model';
     MailModule,
     JobModule,
     ApplicationModule,
+    FeedbackModule,
   ],
 })
 export class AppModule {}

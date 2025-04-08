@@ -13,6 +13,7 @@ import { Roles } from '../auth/roles.decorator';
 import { UserRole } from '../users/model/user.model';
 import { ApplicationService } from './application.service';
 import { ApplyJobDTO, UpdateApplicationStatusDTO } from './dto/application.dto';
+import { ScheduleInterviewDTO } from '../interview/dto/interview-dto';
 
 @Controller('application')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -33,5 +34,15 @@ export class ApplicationController {
     @Body() dto: UpdateApplicationStatusDTO,
   ) {
     return this.applicationService.updateApplicationStatus(id, req.user, dto);
+  }
+
+  @Patch('interview/:id')
+  @Roles(UserRole.Admin, UserRole.Employer)
+  async scheduleInterview(
+    @Param('id') id: string,
+    @Request() req,
+    @Body() dto: ScheduleInterviewDTO,
+  ) {
+    return this.applicationService.scheduleInterview(id, req.user, dto);
   }
 }

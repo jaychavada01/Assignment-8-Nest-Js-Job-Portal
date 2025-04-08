@@ -12,12 +12,14 @@ import * as bcrypt from 'bcryptjs';
 import * as jwt from 'jsonwebtoken';
 import { ConfigService } from '@nestjs/config';
 import { UpdateUserDTO } from './dto/update-user-dto';
+import { RedisService } from 'src/shared/redis/redis.service';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectModel(User) private userModel: typeof User,
     private configService: ConfigService,
+    private redisService: RedisService,
   ) {}
 
   // ** REGISTER USER
@@ -70,6 +72,8 @@ export class UsersService {
       companyId,
     });
 
+    // Invalidate Redis Cache for this role
+    await this.redisService.del(`users:role:${user.role}`);
     return user;
   }
 
@@ -123,9 +127,16 @@ export class UsersService {
 
   // ** Get all JobSeekers (Admin & Employer)
   async findAllJobSeekers() {
-    return this.userModel.findAll({
+    const cacheKey = `users:role:${UserRole.JobSeeker}`;
+    const cachedUsers = await this.redisService.get<User[]>(cacheKey);
+    if (cachedUsers) return cachedUsers;
+
+    const users = await this.userModel.findAll({
       where: { role: UserRole.JobSeeker },
     });
+
+    await this.redisService.set(cacheKey, users);
+    return users;
   }
 
   // ** Admin update user
@@ -149,6 +160,12 @@ export class UsersService {
     };
 
     await user.update(updatedData);
+
+    // Invalidate role cache (only if role exists)
+    if (user.role) {
+      await this.redisService.del(`users:role:${user.role}`);
+    }
+
     return { message: 'User updated successfully', user };
   }
 
@@ -160,6 +177,9 @@ export class UsersService {
     }
 
     await user.destroy(); // Soft delete or mark deletedBy if soft delete logic needed
+
+    // Invalidate role cache
+    await this.redisService.del(`users:role:${user.role}`);
 
     return { message: 'User deleted successfully', deletedById };
   }
