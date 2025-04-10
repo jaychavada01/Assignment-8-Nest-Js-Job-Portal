@@ -124,25 +124,41 @@ export class UsersService {
   }
 
   // ** Get all users (Admin only)
-  async findAll() {
-    return this.userRepository.find({
+  async findAll(
+    page = 1,
+    limit = 10,
+  ): Promise<{ data: User[]; total: number; page: number; limit: number }> {
+    const [data, total] = await this.userRepository.findAndCount({
       where: { isDeleted: false },
       order: { createdAt: 'ASC' },
+      skip: (page - 1) * limit,
+      take: limit,
     });
+
+    return { data, total, page, limit };
   }
 
   // ** Get all JobSeekers (Admin & Employer)
-  async findAllJobSeekers() {
-    const cacheKey = `users:role:${UserRole.JobSeeker}`;
-    const cachedUsers = await this.redisService.get<User[]>(cacheKey);
-    if (cachedUsers) return cachedUsers;
+  async findAllJobSeekers(
+    page = 1,
+    limit = 10,
+  ): Promise<{ data: User[]; total: number; page: number; limit: number }> {
+    const cacheKey = `users:role:${UserRole.JobSeeker}:page:${page}:limit:${limit}`;
+    const cached = await this.redisService.get<{ data: User[]; total: number }>(
+      cacheKey,
+    );
 
-    const users = await this.userRepository.find({
+    if (cached) return { ...cached, page, limit };
+
+    const [data, total] = await this.userRepository.findAndCount({
       where: { role: UserRole.JobSeeker, isDeleted: false },
+      order: { createdAt: 'ASC' },
+      skip: (page - 1) * limit,
+      take: limit,
     });
 
-    await this.redisService.set(cacheKey, users);
-    return users;
+    await this.redisService.set(cacheKey, { data, total });
+    return { data, total, page, limit };
   }
 
   // ** Admin update user

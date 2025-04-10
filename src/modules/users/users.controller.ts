@@ -13,6 +13,7 @@ import {
   Req,
   UsePipes,
   ValidationPipe,
+  Query,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDTO } from './dto/create-user-dto';
@@ -90,8 +91,8 @@ export class UsersController {
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.Admin)
-  async getAllUsers() {
-    return this.usersService.findAll();
+  async getAllUsers(@Query('page') page = 1, @Query('limit') limit = 10) {
+    return this.usersService.findAll(Number(page), Number(limit));
   }
 
   /*
@@ -100,8 +101,8 @@ export class UsersController {
   @Get('jobseekers')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.Admin, UserRole.Employer)
-  async getAllJobSeekers() {
-    return this.usersService.findAllJobSeekers();
+  async getAllJobSeekers(@Query('page') page = 1, @Query('limit') limit = 10) {
+    return this.usersService.findAllJobSeekers(Number(page), Number(limit));
   }
 
   /*
