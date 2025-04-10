@@ -4,8 +4,7 @@ import {
   UnauthorizedException,
   NotFoundException,
 } from '@nestjs/common';
-import { InjectModel } from '@nestjs/sequelize';
-import { User, UserRole } from './model/user.model';
+import { User, UserRole } from './entity/user.entity';
 import { CreateUserDTO } from './dto/create-user-dto';
 import { LoginUserDTO } from './dto/login-user-dto';
 import * as bcrypt from 'bcryptjs';
@@ -13,11 +12,14 @@ import * as jwt from 'jsonwebtoken';
 import { ConfigService } from '@nestjs/config';
 import { UpdateUserDTO } from './dto/update-user-dto';
 import { RedisService } from 'src/shared/redis/redis.service';
+import { InjectRepository } from '@nestjs/typeorm';
+import { DeepPartial, Repository } from 'typeorm';
+import { CompanyProfile } from '../companyProfiles/entity/companyProfile.entity';
 
 @Injectable()
 export class UsersService {
   constructor(
-    @InjectModel(User) private userModel: typeof User,
+    @InjectRepository(User) private userRepository: Repository<User>,
     private configService: ConfigService,
     private redisService: RedisService,
   ) {}
@@ -28,7 +30,7 @@ export class UsersService {
     profilePic: string | null,
     resume: string | null,
   ): Promise<User> {
-    const exists = await this.userModel.findOne({
+    const exists = await this.userRepository.findOne({
       where: { email: data.email },
     });
 
@@ -36,9 +38,7 @@ export class UsersService {
 
     const hashedPassword = await bcrypt.hash(data.password, 10);
 
-    // Conditional companyId validation
     let companyId: string | null = null;
-
     if (data.role === UserRole.Employer) {
       if (!data.companyId) {
         throw new BadRequestException(
@@ -52,38 +52,40 @@ export class UsersService {
       );
     }
 
-    const parsedSkills =
-      data.role === UserRole.JobSeeker && typeof data.skills === 'string'
-        ? JSON.parse(data.skills)
-        : null;
-
-    const parsedExperience =
-      data.role === UserRole.JobSeeker && typeof data.experience === 'string'
-        ? parseInt(data.experience)
-        : data.experience;
-
-    const user = await this.userModel.create({
-      ...data,
+    const user = this.userRepository.create({
+      name: data.name,
+      email: data.email,
+      role: data.role,
       password: hashedPassword,
       profilePic,
       resume: data.role === UserRole.JobSeeker ? resume : null,
-      experience: data.role === UserRole.JobSeeker ? parsedExperience : null,
-      skills: data.role === UserRole.JobSeeker ? parsedSkills : null,
-      companyId,
-    });
+      experience:
+        data.role === UserRole.JobSeeker && data.experience
+          ? typeof data.experience === 'string'
+            ? parseInt(data.experience)
+            : data.experience
+          : null,
+      skills:
+        data.role === UserRole.JobSeeker && data.skills
+          ? typeof data.skills === 'string'
+            ? JSON.parse(data.skills)
+            : data.skills
+          : null,
+      company: companyId ? ({ id: companyId } as CompanyProfile) : null,
+    } as DeepPartial<User>);
 
-    // Invalidate Redis Cache for this role
-    await this.redisService.del(`users:role:${user.role}`);
-    return user;
+    const savedUser = await this.userRepository.save(user);
+    await this.redisService.del(`users:role:${savedUser.role}`);
+
+    return savedUser;
   }
 
   // ** LOGIN USER
   async login(
     data: LoginUserDTO,
   ): Promise<{ user: User; accessToken: string }> {
-    const user = await this.userModel.findOne({
+    const user = await this.userRepository.findOne({
       where: { email: data.email },
-      attributes: ['id', 'name', 'email', 'password', 'role', 'accessToken'],
     });
 
     if (!user) throw new UnauthorizedException('Invalid credentials');
@@ -99,29 +101,33 @@ export class UsersService {
       secret,
       { expiresIn: '15d' },
     );
+    user.accessToken = accessToken;
+    await this.userRepository.save(user);
 
-    await user.update({ accessToken });
-
-    const { password, ...safeUser } = user.toJSON();
+    // remove sensitive fields
+    const { password, ...safeUser } = user;
     return { user: safeUser as User, accessToken };
   }
 
   // ** LOGOUT USER
   async logout(userId: string): Promise<{ message: string }> {
-    const user = await this.userModel.findByPk(userId);
+    const user = await this.userRepository.findOne({ where: { id: userId } });
     if (!user) {
       throw new BadRequestException('User not found');
     }
 
-    await user.update({ accessToken: null });
+    user.accessToken = null;
+    user.isActive = false;
+    await this.userRepository.save(user);
 
     return { message: 'Logged out successfully' };
   }
 
   // ** Get all users (Admin only)
   async findAll() {
-    return this.userModel.findAll({
-      order: [['createdAt', 'ASC']],
+    return this.userRepository.find({
+      where: { isDeleted: false },
+      order: { createdAt: 'ASC' },
     });
   }
 
@@ -131,8 +137,8 @@ export class UsersService {
     const cachedUsers = await this.redisService.get<User[]>(cacheKey);
     if (cachedUsers) return cachedUsers;
 
-    const users = await this.userModel.findAll({
-      where: { role: UserRole.JobSeeker },
+    const users = await this.userRepository.find({
+      where: { role: UserRole.JobSeeker, isDeleted: false },
     });
 
     await this.redisService.set(cacheKey, users);
@@ -147,10 +153,11 @@ export class UsersService {
     profilePic?: string | null,
     resume?: string | null,
   ) {
-    const user = await this.userModel.findByPk(id);
+    const user = await this.userRepository.findOne({ where: { id } });
     if (!user) throw new NotFoundException('User not found');
 
     const updatedData = {
+      ...user,
       name: data.name ?? user.name,
       email: data.email ?? user.email,
       role: data.role ?? user.role,
@@ -159,10 +166,10 @@ export class UsersService {
       updatedBy: updatedById,
     };
 
-    await user.update(updatedData);
+    const saved = await this.userRepository.save(updatedData);
 
     // Invalidate role cache (only if role exists)
-    if (user.role) {
+    if (saved.role) {
       await this.redisService.del(`users:role:${user.role}`);
     }
 
@@ -171,12 +178,13 @@ export class UsersService {
 
   // ** Soft delete user account
   async deleteUserByAdmin(userId: string, deletedById: string) {
-    const user = await this.userModel.findByPk(userId);
+    const user = await this.userRepository.findOne({ where: { id: userId } });
     if (!user) {
       throw new NotFoundException('User not found');
     }
 
-    await user.destroy(); // Soft delete or mark deletedBy if soft delete logic needed
+    user.isDeleted = true;
+    await this.userRepository.softRemove(user);
 
     // Invalidate role cache
     await this.redisService.del(`users:role:${user.role}`);

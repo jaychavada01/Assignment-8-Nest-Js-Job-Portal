@@ -13,7 +13,7 @@ import { JobService } from './job.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { CreateJobDTO } from './dto/create-job-dto';
-import { UserRole } from '../users/model/user.model';
+import { UserRole } from '../users/entity/user.entity';
 import { Roles } from '../auth/roles.decorator';
 
 @Controller('jobs')

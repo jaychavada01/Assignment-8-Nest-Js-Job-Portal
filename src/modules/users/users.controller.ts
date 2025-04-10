@@ -11,6 +11,8 @@ import {
   UseInterceptors,
   BadRequestException,
   Req,
+  UsePipes,
+  ValidationPipe,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDTO } from './dto/create-user-dto';
@@ -21,7 +23,7 @@ import { multerConfig } from 'src/config/multer.config';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
 import { UpdateUserDTO } from './dto/update-user-dto';
-import { UserRole } from './model/user.model';
+import { User, UserRole } from './entity/user.entity';
 
 @Controller('users')
 export class UsersController {
@@ -31,6 +33,7 @@ export class UsersController {
    * =========== CREATING USER WITH 3 ROLE =========
    */
   @Post('create')
+  @UsePipes(new ValidationPipe({ whitelist: true }))
   @UseInterceptors(
     FileFieldsInterceptor(
       [
@@ -66,6 +69,7 @@ export class UsersController {
    * =========== LOGIN USER =========
    */
   @Post('login')
+  @UsePipes(new ValidationPipe({ whitelist: true }))
   async login(@Body() data: LoginUserDTO) {
     return this.usersService.login(data);
   }
@@ -85,7 +89,7 @@ export class UsersController {
    */
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('Admin')
+  @Roles(UserRole.Admin)
   async getAllUsers() {
     return this.usersService.findAll();
   }
@@ -95,7 +99,7 @@ export class UsersController {
    */
   @Get('jobseekers')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('Admin', 'Employer')
+  @Roles(UserRole.Admin, UserRole.Employer)
   async getAllJobSeekers() {
     return this.usersService.findAllJobSeekers();
   }
@@ -105,7 +109,8 @@ export class UsersController {
    */
   @Patch('update/:id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('Admin')
+  @Roles(UserRole.Admin)
+  @UsePipes(new ValidationPipe({ whitelist: true }))
   @UseInterceptors(
     FileFieldsInterceptor(
       [
@@ -143,7 +148,7 @@ export class UsersController {
    */
   @Delete('delete/:id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('Admin')
+  @Roles(UserRole.Admin)
   async deleteUserById(@Param('id') id: string, @Req() req) {
     const adminId = req.user.id;
     return this.usersService.deleteUserByAdmin(id, adminId);

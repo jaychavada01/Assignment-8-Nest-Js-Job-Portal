@@ -1,12 +1,12 @@
 import { Module } from '@nestjs/common';
-import { SequelizeModule } from '@nestjs/sequelize';
-import { CompanyProfile } from './model/companyProfile.model';
+import { CompanyProfile } from './entity/companyProfile.entity';
 import { CompanyProfileService } from './companyProfile.service';
 import { CompanyProfileController } from './companyProfile.controller';
-import { User } from '../users/model/user.model';
+import { User } from '../users/entity/user.entity';
+import { TypeOrmModule } from '@nestjs/typeorm';
 
 @Module({
-  imports: [SequelizeModule.forFeature([CompanyProfile, User])],
+  imports: [TypeOrmModule.forFeature([CompanyProfile, User])],
   providers: [CompanyProfileService],
   controllers: [CompanyProfileController],
   exports: [CompanyProfileService],

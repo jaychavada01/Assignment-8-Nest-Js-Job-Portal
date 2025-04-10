@@ -10,7 +10,7 @@ import {
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
-import { UserRole } from '../users/model/user.model';
+import { UserRole } from '../users/entity/user.entity';
 import { ApplicationService } from './application.service';
 import { ApplyJobDTO, UpdateApplicationStatusDTO } from './dto/application.dto';
 import { ScheduleInterviewDTO } from '../interview/dto/interview-dto';

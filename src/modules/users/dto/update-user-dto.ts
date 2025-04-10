@@ -1,4 +1,4 @@
-import { UserRole } from '../model/user.model';
+import { UserRole } from '../entity/user.entity';
 import { IsOptional, IsEnum } from 'class-validator';
 
 export class UpdateUserDTO {

@@ -3,18 +3,18 @@ import {
   ForbiddenException,
   NotFoundException,
 } from '@nestjs/common';
-import { InjectModel } from '@nestjs/sequelize';
-import { Job } from './model/job.model';
+import { Job } from './entity/job.entity';
 import { CreateJobDTO } from './dto/create-job-dto';
-import { UserRole, User } from '../users/model/user.model';
-import { Op } from 'sequelize';
+import { UserRole, User } from '../users/entity/user.entity';
 import { MailService } from '../mail/mail.service';
+import { InjectRepository } from '@nestjs/typeorm';
+import { ILike, In, LessThanOrEqual, Repository } from 'typeorm';
 
 @Injectable()
 export class JobService {
   constructor(
-    @InjectModel(Job) private jobModel: typeof Job,
-    @InjectModel(User) private userModel: typeof User,
+    @InjectRepository(Job) private readonly jobRepo: Repository<Job>,
+    @InjectRepository(User) private readonly userRepo: Repository<User>,
     private readonly mailService: MailService,
   ) {}
 
@@ -23,24 +23,18 @@ export class JobService {
       throw new ForbiddenException('Only Employers can create jobs');
     }
 
-    const job = await this.jobModel.create({
-      title: dto.title,
-      description: dto.description,
-      location: dto.location,
-      industry: dto.industry,
-      experienceLevel: dto.experienceLevel,
-      requiredExperience: dto.requiredExperience,
-      salaryRange: dto.salaryRange ?? '',
-      requiredSkills: dto.requiredSkills ?? [],
-      maxApplicants: dto.maxApplicants ?? 10,
-      employerId: user.id,
+    const job = this.jobRepo.create({
+      ...dto,
+      employer: user,
       createdBy: user.id,
     });
 
+    const savedJob = await this.jobRepo.save(job);
+
     return {
       message: 'Job created successfully, Waiting for Admin Approval',
-      jobId: job.id,
-      title: job.title,
+      jobId: savedJob.id,
+      title: savedJob.title,
     };
   }
 
@@ -49,33 +43,29 @@ export class JobService {
       throw new ForbiddenException('Only admin can approve jobs');
     }
 
-    const job = await this.jobModel.findByPk(jobId, {
-      include: [
-        { model: User, as: 'employer' },
-        { model: User, as: 'approvedByUser' },
-        { model: User, as: 'rejectedByUser' },
-      ],
+    const job = await this.jobRepo.findOne({
+      where: { id: jobId },
+      relations: ['employer'],
     });
     if (!job) throw new NotFoundException('Job not found');
 
-    const updatedJob = await job.update({
-      status: 'Approved',
-      approvedBy: admin.id,
-      approvedAt: new Date(),
-    });
+    job.status = 'Approved';
+    job.approvedBy = admin.id;
+    job.approvedAt = new Date();
+
+    await this.jobRepo.save(job);
 
     // Fetch employer email
-    const employer = await this.userModel.findByPk(job.employerId);
-    if (employer?.email) {
+    if (job.employer?.email) {
       const subject = `Your job "${job.title}" has been approved!`;
       const html = `
-      <h2>Congratulations!</h2>
-      <p>Your job <strong>"${job.title}"</strong> has been approved and is now live on the job board.</p>
-    `;
-      await this.mailService.sendEmail(employer.email, subject, html);
+        <h2>Congratulations!</h2>
+        <p>Your job <strong>"${job.title}"</strong> has been approved and is now live on the job board.</p>
+      `;
+      await this.mailService.sendEmail(job.employer.email, subject, html);
     }
 
-    return updatedJob;
+    return job;
   }
 
   async rejectJob(jobId: string, admin: User) {
@@ -83,33 +73,28 @@ export class JobService {
       throw new ForbiddenException('Only admin can reject jobs');
     }
 
-    const job = await this.jobModel.findByPk(jobId, {
-      include: [
-        { model: User, as: 'employer' },
-        { model: User, as: 'approvedByUser' },
-        { model: User, as: 'rejectedByUser' },
-      ],
+    const job = await this.jobRepo.findOne({
+      where: { id: jobId },
+      relations: ['employer'],
     });
     if (!job) throw new NotFoundException('Job not found');
 
-    const updatedJob = await job.update({
-      status: 'Rejected',
-      rejectedBy: admin.id,
-      rejectedAt: new Date(),
-    });
+    job.status = 'Rejected';
+    job.rejectedBy = admin.id;
+    job.rejectedAt = new Date();
 
-    // Fetch employer email
-    const employer = await this.userModel.findByPk(job.employerId);
-    if (employer) {
+    await this.jobRepo.save(job);
+
+    if (job.employer?.email) {
       const htmlContent = `<h3>Your job "${job.title}" has been rejected.</h3><p>Please review and resubmit the job with corrections.</p>`;
       await this.mailService.sendEmail(
-        employer.email,
+        job.employer.email,
         'Job Rejected by Admin',
         htmlContent,
       );
     }
 
-    return updatedJob;
+    return job;
   }
 
   async searchJobs(query: {
@@ -120,17 +105,17 @@ export class JobService {
     const where: any = { status: 'Approved' };
 
     if (query.location) {
-      where.location = { [Op.iLike]: `%${query.location}%` };
+      where.location = ILike(`%${query.location}%`);
     }
 
     if (query.skill) {
-      where.requiredSkills = { [Op.contains]: [query.skill] };
+      where.requiredSkills = In([query.skill]);
     }
 
     if (query.experience !== undefined) {
-      where.requiredExperience = { [Op.lte]: query.experience };
+      where.requiredExperience = LessThanOrEqual(query.experience);
     }
 
-    return this.jobModel.findAll({ where });
+    return this.jobRepo.find({ where });
   }
 }

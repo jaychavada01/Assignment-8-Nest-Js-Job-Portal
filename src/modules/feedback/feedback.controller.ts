@@ -2,7 +2,7 @@ import { Controller, Post, Body, UseGuards, Request } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
-import { UserRole } from '../users/model/user.model';
+import { UserRole } from '../users/entity/user.entity';
 import { FeedbackService } from './feedback.service';
 import { CreateFeedbackDTO } from './dto/feedback-dto';
 

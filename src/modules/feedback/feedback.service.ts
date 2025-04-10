@@ -3,45 +3,62 @@ import {
   NotFoundException,
   ForbiddenException,
 } from '@nestjs/common';
-import { InjectModel } from '@nestjs/sequelize';
-import { Feedback } from './model/feedback.model';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Feedback } from './entity/feedback.entity';
 import { CreateFeedbackDTO } from './dto/feedback-dto';
-import { Application } from '../application/model/application.model';
-import { User, UserRole } from '../users/model/user.model';
+import { Application } from '../application/entity/application.entity';
+import { User, UserRole } from '../users/entity/user.entity';
 
 @Injectable()
 export class FeedbackService {
   constructor(
-    @InjectModel(Feedback) private feedbackModel: typeof Feedback,
-    @InjectModel(Application) private applicationModel: typeof Application,
+    @InjectRepository(Feedback)
+    private feedbackRepository: Repository<Feedback>,
+
+    @InjectRepository(Application)
+    private applicationRepository: Repository<Application>,
   ) {}
 
   async giveFeedback(user: User, dto: CreateFeedbackDTO) {
-    const application = await this.applicationModel.findByPk(dto.applicationId);
-    if (!application) throw new NotFoundException('Application not found');
+    const application = await this.applicationRepository.findOne({
+      where: { id: dto.applicationId },
+      relations: ['job', 'job.employer'], // make sure the relation exists
+    });
 
-    if (user.role !== UserRole.Employer || application.createdBy !== user.id) {
+    if (!application) {
+      throw new NotFoundException('Application not found');
+    }
+
+    // Check if the current user is the employer who created the job
+    if (
+      user.role !== UserRole.Employer ||
+      application.job?.employer?.id !== user.id
+    ) {
       throw new ForbiddenException(
         'Only the employer who created the job can give feedback',
       );
     }
 
-    const existing = await this.feedbackModel.findOne({
-      where: { applicationId: dto.applicationId },
+    const existing = await this.feedbackRepository.findOne({
+      where: { application: { id: dto.applicationId } },
     });
+
     if (existing) {
       throw new ForbiddenException(
         'Feedback already submitted for this application',
       );
     }
 
-    await this.feedbackModel.create({
-      applicationId: dto.applicationId,
-      employerId: user.id,
-      jobSeekerId: application.jobSeekerId,
+    const feedback = this.feedbackRepository.create({
+      application: { id: dto.applicationId },
+      employer: { id: user.id },
+      jobSeeker: { id: application.jobSeeker.id },
       feedbackText: dto.feedbackText,
       rating: dto.rating,
     });
+
+    await this.feedbackRepository.save(feedback);
 
     return { message: 'Feedback submitted successfully' };
   }

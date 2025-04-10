@@ -1,14 +1,18 @@
 import { Injectable, ForbiddenException } from '@nestjs/common';
-import { InjectModel } from '@nestjs/sequelize';
-import { CompanyProfile } from './model/companyProfile.model';
+import { CompanyProfile } from './entity/companyProfile.entity';
 import { CreateCompanyDTO } from './dto/create-profile-dto';
-import { UserRole } from 'src/modules/users/model/user.model';
+import { User, UserRole } from 'src/modules/users/entity/user.entity';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class CompanyProfileService {
   constructor(
-    @InjectModel(CompanyProfile)
-    private companyModel: typeof CompanyProfile,
+    @InjectRepository(CompanyProfile)
+    private readonly companyRepo: Repository<CompanyProfile>,
+
+    @InjectRepository(User)
+    private readonly userRepo: Repository<User>,
   ) {}
 
   async createCompany(
@@ -17,20 +21,25 @@ export class CompanyProfileService {
     dto: CreateCompanyDTO,
     companyLogo: string | null,
   ): Promise<CompanyProfile> {
-    if (role !== UserRole.Admin) {
-      throw new ForbiddenException('Only Admins can create companies');
+    if (role !== UserRole.Admin && role !== UserRole.Employer) {
+      throw new ForbiddenException(
+        'Only Admins or Employers can create companies',
+      );
     }
 
-    const company = await this.companyModel.create({
+    const user = await this.userRepo.findOne({ where: { id: userId } });
+    if (!user) throw new ForbiddenException('User not found');
+
+    const company = this.companyRepo.create({
       ...dto,
-      companyLogo,
-      createdBy: userId,
+      companyLogo: companyLogo ?? undefined,
+      createdBy: user,
     });
 
-    return company;
+    return this.companyRepo.save(company);
   }
 
   async findAll(): Promise<CompanyProfile[]> {
-    return this.companyModel.findAll();
+    return this.companyRepo.find({ relations: ['createdBy'] });
   }
 }

@@ -8,7 +8,8 @@ import {
   IsNumber,
   MinLength,
 } from 'class-validator';
-import { UserRole } from '../model/user.model';
+import { UserRole } from '../entity/user.entity';
+import { Transform, Type } from 'class-transformer';
 
 export class CreateUserDTO {
   @IsString()
@@ -29,11 +30,15 @@ export class CreateUserDTO {
   companyId?: string; // Only for Employers
 
   @IsOptional()
+  @Type(() => Number)
   @IsNumber()
   experience?: number; // Only for JobSeekers
 
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
-  skills?: string[]; // Only for JobSeekers
+  @Transform(({ value }) =>
+    typeof value === 'string' ? JSON.parse(value) : value,
+  )
+  skills?: string[];
 }
