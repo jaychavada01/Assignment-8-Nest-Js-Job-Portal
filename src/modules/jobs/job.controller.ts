@@ -27,7 +27,6 @@ export class JobController {
     const user = req.user;
     const result = await this.jobService.createJob(user, dto);
     return {
-      statusCode: 201,
       ...result,
     };
   }

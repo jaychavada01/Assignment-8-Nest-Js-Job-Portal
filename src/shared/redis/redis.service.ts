@@ -16,13 +16,9 @@ export class RedisService implements OnModuleInit {
     console.log('Redis connected');
   }
 
-  async set(
-    key: string,
-    value: any,
-    ttlInSeconds: number = 3600,
-  ): Promise<void> {
+  async set(key: string, value: any): Promise<void> {
     console.log(`[REDIS] SET key = ${key}`);
-    await this.client.set(key, JSON.stringify(value), { EX: ttlInSeconds });
+    await this.client.set(key, JSON.stringify(value));
   }
 
   async get<T>(key: string): Promise<T | null> {
