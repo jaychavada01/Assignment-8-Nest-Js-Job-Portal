@@ -7,9 +7,9 @@ import {
   Request,
   UseGuards,
 } from '@nestjs/common';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { RolesGuard } from '../auth/roles.guard';
-import { Roles } from '../auth/roles.decorator';
+import { JwtAuthGuard } from '../../guard/jwt-auth.guard';
+import { RolesGuard } from '../../guard/roles.guard';
+import { Roles } from '../../decorators/roles.decorator';
 import { UserRole } from '../users/entity/user.entity';
 import { ApplicationService } from './application.service';
 import { ApplyJobDTO, UpdateApplicationStatusDTO } from './dto/application.dto';

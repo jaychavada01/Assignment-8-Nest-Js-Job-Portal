@@ -17,12 +17,12 @@ import {
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDTO } from './dto/create-user-dto';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { JwtAuthGuard } from '../../guard/jwt-auth.guard';
 import { LoginUserDTO } from './dto/login-user-dto';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { multerConfig } from 'src/config/multer.config';
-import { Roles } from '../auth/roles.decorator';
-import { RolesGuard } from '../auth/roles.guard';
+import { Roles } from '../../decorators/roles.decorator';
+import { RolesGuard } from '../../guard/roles.guard';
 import { UpdateUserDTO } from './dto/update-user-dto';
 import { User, UserRole } from './entity/user.entity';
 

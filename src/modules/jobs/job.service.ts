@@ -6,7 +6,7 @@ import {
 import { Job } from './entity/job.entity';
 import { CreateJobDTO } from './dto/create-job-dto';
 import { UserRole, User } from '../users/entity/user.entity';
-import { MailService } from '../mail/mail.service';
+import { MailService } from '../../services/mail.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ILike, In, LessThanOrEqual, Repository } from 'typeorm';
 

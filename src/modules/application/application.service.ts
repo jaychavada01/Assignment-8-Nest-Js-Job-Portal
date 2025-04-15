@@ -11,7 +11,7 @@ import { User, UserRole } from '../users/entity/user.entity';
 import { InterviewInvitation } from '../interview/interview.entity';
 import { ApplyJobDTO, UpdateApplicationStatusDTO } from './dto/application.dto';
 import { ScheduleInterviewDTO } from '../interview/dto/interview-dto';
-import { MailService } from '../mail/mail.service';
+import { MailService } from '../../services/mail.service';
 
 @Injectable()
 export class ApplicationService {

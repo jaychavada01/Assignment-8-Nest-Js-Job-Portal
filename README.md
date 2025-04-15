@@ -20,228 +20,70 @@ A comprehensive backend API for a job portal application built with NestJS. This
 
 ```
 Assignment 8/
-├─ dist/
-│  ├─ config/
-│  │  ├─ multer.config.d.ts
-│  │  ├─ multer.config.js
-│  │  └─ multer.config.js.map
-│  ├─ modules/
-│  │  ├─ application/
-│  │  │  ├─ dto/
-│  │  │  │  ├─ application.dto.d.ts
-│  │  │  │  ├─ application.dto.js
-│  │  │  │  └─ application.dto.js.map
-│  │  │  ├─ model/
-│  │  │  │  ├─ application.model.d.ts
-│  │  │  │  ├─ application.model.js
-│  │  │  │  └─ application.model.js.map
-│  │  │  ├─ application.controller.d.ts
-│  │  │  ├─ application.controller.js
-│  │  │  ├─ application.controller.js.map
-│  │  │  ├─ application.module.d.ts
-│  │  │  ├─ application.module.js
-│  │  │  ├─ application.module.js.map
-│  │  │  ├─ application.service.d.ts
-│  │  │  ├─ application.service.js
-│  │  │  └─ application.service.js.map
-│  │  ├─ auth/
-│  │  │  ├─ auth.module.d.ts
-│  │  │  ├─ auth.module.js
-│  │  │  ├─ auth.module.js.map
-│  │  │  ├─ jwt-auth.guard.d.ts
-│  │  │  ├─ jwt-auth.guard.js
-│  │  │  ├─ jwt-auth.guard.js.map
-│  │  │  ├─ jwt.strategy.d.ts
-│  │  │  ├─ jwt.strategy.js
-│  │  │  ├─ jwt.strategy.js.map
-│  │  │  ├─ roles.decorator.d.ts
-│  │  │  ├─ roles.decorator.js
-│  │  │  ├─ roles.decorator.js.map
-│  │  │  ├─ roles.guard.d.ts
-│  │  │  ├─ roles.guard.js
-│  │  │  └─ roles.guard.js.map
-│  │  ├─ companyProfiles/
-│  │  │  ├─ dto/
-│  │  │  │  ├─ create-profile-dto.d.ts
-│  │  │  │  ├─ create-profile-dto.js
-│  │  │  │  └─ create-profile-dto.js.map
-│  │  │  ├─ model/
-│  │  │  │  ├─ companyProfile.model.d.ts
-│  │  │  │  ├─ companyProfile.model.js
-│  │  │  │  └─ companyProfile.model.js.map
-│  │  │  ├─ company-profile.module.d.ts
-│  │  │  ├─ company-profile.module.js
-│  │  │  ├─ company-profile.module.js.map
-│  │  │  ├─ companyProfile.controller.d.ts
-│  │  │  ├─ companyProfile.controller.js
-│  │  │  ├─ companyProfile.controller.js.map
-│  │  │  ├─ companyProfile.service.d.ts
-│  │  │  ├─ companyProfile.service.js
-│  │  │  └─ companyProfile.service.js.map
-│  │  ├─ feedback/
-│  │  │  ├─ dto/
-│  │  │  │  ├─ feedback-dto.d.ts
-│  │  │  │  ├─ feedback-dto.js
-│  │  │  │  └─ feedback-dto.js.map
-│  │  │  ├─ model/
-│  │  │  │  ├─ feedback.model.d.ts
-│  │  │  │  ├─ feedback.model.js
-│  │  │  │  └─ feedback.model.js.map
-│  │  │  ├─ feedback.controller.d.ts
-│  │  │  ├─ feedback.controller.js
-│  │  │  ├─ feedback.controller.js.map
-│  │  │  ├─ feedback.module.d.ts
-│  │  │  ├─ feedback.module.js
-│  │  │  ├─ feedback.module.js.map
-│  │  │  ├─ feedback.service.d.ts
-│  │  │  ├─ feedback.service.js
-│  │  │  └─ feedback.service.js.map
-│  │  ├─ interview/
-│  │  │  ├─ dto/
-│  │  │  │  ├─ interview-dto.d.ts
-│  │  │  │  ├─ interview-dto.js
-│  │  │  │  └─ interview-dto.js.map
-│  │  │  ├─ interview.model.d.ts
-│  │  │  ├─ interview.model.js
-│  │  │  └─ interview.model.js.map
-│  │  ├─ jobs/
-│  │  │  ├─ dto/
-│  │  │  │  ├─ create-job-dto.d.ts
-│  │  │  │  ├─ create-job-dto.js
-│  │  │  │  └─ create-job-dto.js.map
-│  │  │  ├─ model/
-│  │  │  │  ├─ job.model.d.ts
-│  │  │  │  ├─ job.model.js
-│  │  │  │  └─ job.model.js.map
-│  │  │  ├─ job.controller.d.ts
-│  │  │  ├─ job.controller.js
-│  │  │  ├─ job.controller.js.map
-│  │  │  ├─ job.module.d.ts
-│  │  │  ├─ job.module.js
-│  │  │  ├─ job.module.js.map
-│  │  │  ├─ job.service.d.ts
-│  │  │  ├─ job.service.js
-│  │  │  └─ job.service.js.map
-│  │  ├─ mail/
-│  │  │  ├─ mail.module.d.ts
-│  │  │  ├─ mail.module.js
-│  │  │  ├─ mail.module.js.map
-│  │  │  ├─ mail.service.d.ts
-│  │  │  ├─ mail.service.js
-│  │  │  └─ mail.service.js.map
-│  │  ├─ users/
-│  │  │  ├─ dto/
-│  │  │  │  ├─ create-user-dto.d.ts
-│  │  │  │  ├─ create-user-dto.js
-│  │  │  │  ├─ create-user-dto.js.map
-│  │  │  │  ├─ login-user-dto.d.ts
-│  │  │  │  ├─ login-user-dto.js
-│  │  │  │  ├─ login-user-dto.js.map
-│  │  │  │  ├─ update-user-dto.d.ts
-│  │  │  │  ├─ update-user-dto.js
-│  │  │  │  └─ update-user-dto.js.map
-│  │  │  ├─ model/
-│  │  │  │  ├─ user.model.d.ts
-│  │  │  │  ├─ user.model.js
-│  │  │  │  └─ user.model.js.map
-│  │  │  ├─ users.controller.d.ts
-│  │  │  ├─ users.controller.js
-│  │  │  ├─ users.controller.js.map
-│  │  │  ├─ users.module.d.ts
-│  │  │  ├─ users.module.js
-│  │  │  ├─ users.module.js.map
-│  │  │  ├─ users.service.d.ts
-│  │  │  ├─ users.service.js
-│  │  │  └─ users.service.js.map
-│  │  ├─ indexModel.d.ts
-│  │  ├─ indexModel.js
-│  │  └─ indexModel.js.map
-│  ├─ shared/
-│  │  └─ redis/
-│  │     ├─ redis.module.d.ts
-│  │     ├─ redis.module.js
-│  │     ├─ redis.module.js.map
-│  │     ├─ redis.service.d.ts
-│  │     ├─ redis.service.js
-│  │     └─ redis.service.js.map
-│  ├─ app.controller.d.ts
-│  ├─ app.controller.js
-│  ├─ app.controller.js.map
-│  ├─ app.module.d.ts
-│  ├─ app.module.js
-│  ├─ app.module.js.map
-│  ├─ app.service.d.ts
-│  ├─ app.service.js
-│  ├─ app.service.js.map
-│  ├─ main.d.ts
-│  ├─ main.js
-│  ├─ main.js.map
-│  └─ tsconfig.build.tsbuildinfo
 ├─ src/
 │  ├─ config/
 │  │  └─ multer.config.ts
+│  ├─ decorators/
+│  │  └─ roles.decorator.ts
+│  ├─ guard/
+│  │  ├─ jwt-auth.guard.ts
+│  │  └─ roles.guard.ts
 │  ├─ modules/
 │  │  ├─ application/
 │  │  │  ├─ dto/
 │  │  │  │  └─ application.dto.ts
-│  │  │  ├─ model/
-│  │  │  │  └─ application.model.ts
+│  │  │  ├─ entity/
+│  │  │  │  └─ application.entity.ts
 │  │  │  ├─ application.controller.ts
 │  │  │  ├─ application.module.ts
 │  │  │  └─ application.service.ts
-│  │  ├─ auth/
-│  │  │  ├─ auth.module.ts
-│  │  │  ├─ jwt-auth.guard.ts
-│  │  │  ├─ jwt.strategy.ts
-│  │  │  ├─ roles.decorator.ts
-│  │  │  └─ roles.guard.ts
 │  │  ├─ companyProfiles/
 │  │  │  ├─ dto/
 │  │  │  │  └─ create-profile-dto.ts
-│  │  │  ├─ model/
-│  │  │  │  ├─ companyProfile.model.js
-│  │  │  │  └─ companyProfile.model.ts
+│  │  │  ├─ entity/
+│  │  │  │  └─ companyProfile.entity.ts
 │  │  │  ├─ company-profile.module.ts
 │  │  │  ├─ companyProfile.controller.ts
 │  │  │  └─ companyProfile.service.ts
 │  │  ├─ feedback/
 │  │  │  ├─ dto/
 │  │  │  │  └─ feedback-dto.ts
-│  │  │  ├─ model/
-│  │  │  │  └─ feedback.model.ts
+│  │  │  ├─ entity/
+│  │  │  │  └─ feedback.entity.ts
 │  │  │  ├─ feedback.controller.ts
 │  │  │  ├─ feedback.module.ts
 │  │  │  └─ feedback.service.ts
 │  │  ├─ interview/
 │  │  │  ├─ dto/
 │  │  │  │  └─ interview-dto.ts
-│  │  │  └─ interview.model.ts
+│  │  │  └─ interview.entity.ts
 │  │  ├─ jobs/
 │  │  │  ├─ dto/
 │  │  │  │  └─ create-job-dto.ts
-│  │  │  ├─ model/
-│  │  │  │  └─ job.model.ts
+│  │  │  ├─ entity/
+│  │  │  │  └─ job.entity.ts
 │  │  │  ├─ job.controller.ts
 │  │  │  ├─ job.module.ts
 │  │  │  └─ job.service.ts
 │  │  ├─ mail/
 │  │  │  ├─ mail.module.ts
 │  │  │  └─ mail.service.ts
-│  │  ├─ users/
-│  │  │  ├─ dto/
-│  │  │  │  ├─ create-user-dto.ts
-│  │  │  │  ├─ login-user-dto.ts
-│  │  │  │  └─ update-user-dto.ts
-│  │  │  ├─ model/
-│  │  │  │  └─ user.model.ts
-│  │  │  ├─ users.controller.ts
-│  │  │  ├─ users.module.ts
-│  │  │  └─ users.service.ts
-│  │  └─ indexModel.ts
+│  │  └─ users/
+│  │     ├─ dto/
+│  │     │  ├─ create-user-dto.ts
+│  │     │  ├─ login-user-dto.ts
+│  │     │  └─ update-user-dto.ts
+│  │     ├─ entity/
+│  │     │  └─ user.entity.ts
+│  │     ├─ users.controller.ts
+│  │     ├─ users.module.ts
+│  │     └─ users.service.ts
 │  ├─ shared/
 │  │  └─ redis/
 │  │     ├─ redis.module.ts
 │  │     └─ redis.service.ts
+│  ├─ strategy/
+│  │  └─ jwt.strategy.ts
 │  ├─ app.controller.spec.ts
 │  ├─ app.controller.ts
 │  ├─ app.module.ts
@@ -261,6 +103,7 @@ Assignment 8/
 ├─ README.md
 ├─ tsconfig.build.json
 └─ tsconfig.json
+
 ```
 
 ## Features

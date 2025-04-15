@@ -75,7 +75,10 @@ export class UsersService {
     } as DeepPartial<User>);
 
     const savedUser = await this.userRepository.save(user);
-    await this.redisService.del(`users:role:${savedUser.role}`);
+    const { password, ...safeUser } = savedUser;
+
+    //? redis cache data store
+    await this.redisService.set(savedUser.id, safeUser);
 
     return savedUser;
   }
@@ -104,8 +107,12 @@ export class UsersService {
     user.accessToken = accessToken;
     await this.userRepository.save(user);
 
-    // remove sensitive fields
+    // ? Remove password before caching
     const { password, ...safeUser } = user;
+
+    // ? Cache full user data (without password)
+    await this.redisService.set(user.id, safeUser);
+
     return { user: safeUser as User, accessToken };
   }
 
@@ -119,6 +126,9 @@ export class UsersService {
     user.accessToken = null;
     user.isActive = false;
     await this.userRepository.save(user);
+
+    // ? remove cached session
+    await this.redisService.del(userId);
 
     return { message: 'Logged out successfully' };
   }
@@ -143,13 +153,6 @@ export class UsersService {
     page = 1,
     limit = 10,
   ): Promise<{ data: User[]; total: number; page: number; limit: number }> {
-    const cacheKey = `users:role:${UserRole.JobSeeker}:page:${page}:limit:${limit}`;
-    const cached = await this.redisService.get<{ data: User[]; total: number }>(
-      cacheKey,
-    );
-
-    if (cached) return { ...cached, page, limit };
-
     const [data, total] = await this.userRepository.findAndCount({
       where: { role: UserRole.JobSeeker, isDeleted: false },
       order: { createdAt: 'ASC' },
@@ -157,7 +160,6 @@ export class UsersService {
       take: limit,
     });
 
-    await this.redisService.set(cacheKey, { data, total });
     return { data, total, page, limit };
   }
 
@@ -182,14 +184,16 @@ export class UsersService {
       updatedBy: updatedById,
     };
 
-    const saved = await this.userRepository.save(updatedData);
+    // Update the user in the database
+    await this.userRepository.save(updatedData);
 
-    // Invalidate role cache (only if role exists)
-    if (saved.role) {
-      await this.redisService.del(`users:role:${user.role}`);
-    }
+    // Remove the old cache for the user
+    await this.redisService.del(user.id);
 
-    return { message: 'User updated successfully', user };
+    // Store the updated user data in the cache
+    await this.redisService.set(user.id, updatedData);
+
+    return { message: 'User updated successfully', user: updatedData };
   }
 
   // ** Soft delete user account
@@ -202,8 +206,7 @@ export class UsersService {
     user.isDeleted = true;
     await this.userRepository.softRemove(user);
 
-    // Invalidate role cache
-    await this.redisService.del(`users:role:${user.role}`);
+    await this.redisService.del(user.id);
 
     return { message: 'User deleted successfully', deletedById };
   }

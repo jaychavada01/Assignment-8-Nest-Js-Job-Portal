@@ -10,11 +10,11 @@ import {
   Patch,
 } from '@nestjs/common';
 import { JobService } from './job.service';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { RolesGuard } from '../auth/roles.guard';
+import { JwtAuthGuard } from '../../guard/jwt-auth.guard';
+import { RolesGuard } from '../../guard/roles.guard';
 import { CreateJobDTO } from './dto/create-job-dto';
 import { UserRole } from '../users/entity/user.entity';
-import { Roles } from '../auth/roles.decorator';
+import { Roles } from '../../decorators/roles.decorator';
 
 @Controller('jobs')
 @UseGuards(JwtAuthGuard, RolesGuard)

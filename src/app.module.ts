@@ -1,24 +1,29 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { JwtModule } from '@nestjs/jwt';
 
+// Modules
 import { UsersModule } from './modules/users/users.module';
-import { AuthModule } from './modules/auth/auth.module';
 import { CompanyProfileModule } from './modules/companyProfiles/company-profile.module';
 import { JobModule } from './modules/jobs/job.module';
-import { MailModule } from './modules/mail/mail.module';
 import { ApplicationModule } from './modules/application/application.module';
 import { FeedbackModule } from './modules/feedback/feedback.module';
 
-// TypeORM Entities
+// Entities
 import { User } from './modules/users/entity/user.entity';
 import { CompanyProfile } from './modules/companyProfiles/entity/companyProfile.entity';
 import { Job } from './modules/jobs/entity/job.entity';
 import { Application } from './modules/application/entity/application.entity';
 
+// Auth Strategy
+import { JwtStrategy } from './strategy/jwt.strategy';
+import { MailService } from './services/mail.service';
+
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+
     TypeOrmModule.forRoot({
       type: 'postgres',
       host: process.env.DB_HOST,
@@ -30,13 +35,26 @@ import { Application } from './modules/application/entity/application.entity';
       autoLoadEntities: true,
       entities: [User, CompanyProfile, Job, Application],
     }),
+
+    TypeOrmModule.forFeature([User]),
+
+    JwtModule.registerAsync({
+      imports: [ConfigModule],
+      useFactory: (config: ConfigService) => ({
+        secret: config.get<string>('JWT_SECRET'),
+        signOptions: { expiresIn: '15d' },
+      }),
+      inject: [ConfigService],
+    }),
+
+    // Other feature modules
     UsersModule,
-    AuthModule,
     CompanyProfileModule,
     JobModule,
-    MailModule,
     ApplicationModule,
     FeedbackModule,
   ],
+  providers: [JwtStrategy, MailService],
+  exports: [JwtModule, MailService],
 })
 export class AppModule {}

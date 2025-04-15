@@ -11,9 +11,9 @@ import { CompanyProfileService } from './companyProfile.service';
 import { CreateCompanyDTO } from './dto/create-profile-dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { multerConfig } from 'src/config/multer.config';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { RolesGuard } from '../auth/roles.guard';
-import { Roles } from '../auth/roles.decorator';
+import { JwtAuthGuard } from '../../guard/jwt-auth.guard';
+import { RolesGuard } from '../../guard/roles.guard';
+import { Roles } from '../../decorators/roles.decorator';
 import { UserRole } from '../users/entity/user.entity';
 
 @Controller('companies')
